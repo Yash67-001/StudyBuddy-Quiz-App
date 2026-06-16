@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="StudyBuddy - Interactive Engineering Prep">
+    <title>CS Master Quiz | Launch Edition</title>
+    
+    <!-- Theme Initializer -->
+    <script>
+        const savedTheme = localStorage.getItem('studybuddy_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    </script>
+
+    <style>
+        /* --- CSS Theme Variables --- */
+        :root[data-theme="dark"] {
+            --bg-color: #0f172a;
+            --bg-gradient: linear-gradient(135deg, #0f172a, #1e1b4b);
+            --card-bg: rgba(30, 41, 59, 0.75);
+            --nav-bg: rgba(15, 23, 42, 0.85);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --primary: #8b5cf6;
+            --primary-hover: #7c3aed;
+            --primary-glow: rgba(139, 92, 246, 0.5);
+            --success: rgba(16, 185, 129, 0.9);
+            --danger: rgba(239, 68, 68, 0.9);
+            --input-bg: rgba(0, 0, 0, 0.4);
+            --option-hover: rgba(255, 255, 255, 0.1);
+            --module-bg: rgba(255, 255, 255, 0.03);
+            --module-hover: rgba(255, 255, 255, 0.08);
+            --star-color: #ffffff;
+        }
+
+        :root[data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --bg-gradient: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --nav-bg: rgba(255, 255, 255, 0.9);
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border-color: rgba(0, 0, 0, 0.1);
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --success: #10b981;
+            --danger: #ef4444;
+            --input-bg: rgba(255, 255, 255, 0.8);
+            --option-hover: rgba(0, 0, 0, 0.05);
+            --module-bg: rgba(255, 255, 255, 0.6);
+            --module-hover: rgba(255, 255, 255, 1);
+            --star-color: #6366f1; 
+        }
+
+        :root[data-theme="midnight"] {
+            --bg-color: #000000;
+            --bg-gradient: #000000;
+            --card-bg: #111111;
+            --nav-bg: rgba(0, 0, 0, 0.95);
+            --text-main: #ffffff;
+            --text-muted: #a1a1aa;
+            --border-color: #27272a;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --primary-glow: rgba(59, 130, 246, 0.6);
+            --success: #059669;
+            --danger: #dc2626;
+            --input-bg: #000000;
+            --option-hover: #27272a;
+            --module-bg: #18181b;
+            --module-hover: #27272a;
+            --star-color: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background 0.4s ease, color 0.4s ease;
+            overflow-x: hidden;
+        }
+
+        .hidden { display: none !important; }
+
+        *:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; border-radius: 4px; }
+
+        /* ========================================= */
+        /* --- GLOBAL BACKGROUND ANIMATIONS ---      */
+        /* ========================================= */
+        #star-container {
+            position: fixed;
+            inset: 0;
+            z-index: 0; /* Always visible behind content */
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            background: var(--star-color);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--star-color), 0 0 12px var(--star-color);
+            animation: twinkle linear infinite;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.1; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0.1; transform: scale(0.5); }
+        }
+
+        .shooting-star {
+            position: absolute;
+            width: 150px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), transparent);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--primary-glow);
+            animation: shoot linear forwards;
+            opacity: 0;
+        }
+
+        @keyframes shoot {
+            0% { transform: translateX(0) translateY(0) rotate(-45deg); opacity: 1; }
+            100% { transform: translateX(-150vw) translateY(150vh) rotate(-45deg); opacity: 0; }
+        }
+
+        /* ========================================= */
+        /* --- DYNAMIC COLLISION SPLASH SCREEN ---   */
+        /* ========================================= */
+        #splash-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: transparent; /* Changed to transparent so stars show! */
+            transition: opacity 0.8s ease, filter 0.8s ease, transform 0.8s ease;
+            overflow: hidden;
+        }
+
+        #splash-screen.fade-out {
+            opacity: 0;
+            filter: blur(10px);
+            transform: scale(1.05);
+            pointer-events: none;
+        }
+
+        .splash-logo {
+            display: flex;
+            font-size: 4rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 2;
+            animation: containerImpact 0.4s ease-out 0.7s forwards;
+        }
+
+        .word-left {
+            color: var(--text-main);
+            transform: translateX(-150vw) rotate(-20deg);
+            opacity: 0;
+            animation: slideBounceLeft 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .word-right {
+            color: var(--primary);
+            text-shadow: 0 0 20px var(--primary-glow);
+            transform: translateX(150vw) rotate(20deg);
+            opacity: 0;
+            animation: slideBounceRight 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes slideBounceLeft {
+            0% { transform: translateX(-100vw) rotate(-20deg); opacity: 0; }
+            40% { opacity: 1; }
+            60% { transform: translateX(15px) rotate(5deg); }
+            80% { transform: translateX(-5px) rotate(-2deg); }
+            100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+        }
+
+        @keyframes slideBounceRight {
+            0% { transform: translateX(100vw) rotate(20deg); opacity: 0; }
+            40% { opacity: 1; }
+            60% { transform: translateX(-15px) rotate(-5deg); }
+            80% { transform: translateX(5px) rotate(2deg); }
+            100% { transform: translateX(0) rotate(0deg); opacity: 1; }
+        }
+
+        @keyframes containerImpact {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.15); filter: brightness(1.3); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+
+        #splash-text {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-align: center;
+            min-height: 2rem;
+            position: relative;
+            z-index: 2;
+            opacity: 0;
+            animation: textFadeIn 0.5s ease-in 1.2s forwards;
+        }
+
+        @keyframes textFadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); text-shadow: 0 0 8px rgba(255, 255, 255, 0.2); } 
+        }
+
+        @media (max-width: 600px) { .splash-logo { font-size: 2.8rem; } }
+
+        /* ========================================= */
+        /* --- MAIN UI COMPONENTS --- */
+        /* ========================================= */
+        .glass {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            width: 100%;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--nav-bg);
+            transition: all 0.3s ease;
+        }
+
+        .nav-brand { font-size: 1.25rem; font-weight: 700; letter-spacing: 0.5px; color: var(--primary); }
+        .nav-links { display: flex; gap: 0.5rem; align-items: center; }
+        .nav-btn {
+            background: transparent; color: var(--text-muted); border: 1px solid transparent; padding: 0.6rem 1rem;
+            border-radius: 12px; cursor: pointer; transition: all 0.2s ease; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;
+        }
+        .nav-btn:hover, .nav-btn.active { background: var(--option-hover); color: var(--text-main); border-color: var(--border-color); }
+        .nav-icon { width: 18px; height: 18px; display: none; }
+
+        main {
+            flex: 1; display: flex; align-items: center; justify-content: center; width: 100%;
+            padding: 2rem 1rem; padding-bottom: 120px; opacity: 0; transition: opacity 0.6s ease;
+            position: relative; z-index: 10;
+        }
+        main.ready { opacity: 1; }
+
+        .card { border-radius: 20px; width: 100%; max-width: 650px; padding: 2.5rem; text-align: center; transition: all 0.3s ease; position: relative; overflow: hidden;}
+        .card-wide { max-width: 800px; overflow: visible;} 
+
+        h1 { margin-bottom: 0.5rem; font-size: 2rem; font-weight: 700; }
+        h2 { margin-bottom: 1.5rem; font-weight: 600; font-size: 1.3rem; color: var(--text-main); text-align: left; }
+        p { color: var(--text-muted); margin-bottom: 2rem; font-size: 1.05rem; }
+
+        /* Front Page Specifics */
+        .front-header { text-align: left; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); }
+        .front-header h1 { font-size: 2.4rem; background: linear-gradient(to right, var(--text-main), var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .front-header p { margin-bottom: 0; color: var(--primary); font-weight: 500; letter-spacing: 0.5px; }
+
+        .stats-container { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 2.5rem; flex-wrap: wrap; }
+        .stat-box { background: var(--input-bg); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: 16px; flex: 1; min-width: 120px; text-align: left; transition: transform 0.2s; }
+        .stat-box:hover { transform: translateY(-2px); border-color: var(--primary); }
+        .stat-box h3 { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-box p { font-size: 2rem; font-weight: 700; color: var(--text-main); margin: 0; }
+
+        .modules-grid { display: grid; grid-template-columns: 1fr; gap: 1.2rem; }
+        @media (min-width: 600px) { .modules-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        .module-card {
+            background: var(--module-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem; text-align: left;
+            cursor: pointer; transition: all 0.3s ease; display: flex; flex-direction: column; gap: 1rem;
+        }
+        .module-card:hover { background: var(--module-hover); transform: translateY(-4px); border-color: var(--primary); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .module-icon-wrapper { background: var(--option-hover); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--primary); }
+        .module-card h3 { font-size: 1.15rem; color: var(--text-main); margin-bottom: 0.2rem; }
+        .module-card p { font-size: 0.9rem; color: var(--text-muted); margin: 0; line-height: 1.4; }
+
+        /* Forms & Buttons */
+        input[type="text"] { width: 100%; padding: 16px 20px; margin-bottom: 1.5rem; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 12px; font-size: 1rem; color: var(--text-main); outline: none; transition: all 0.3s ease; position: relative; z-index: 2;}
+        input[type="text"]:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-glow); }
+        .input-error { border-color: var(--danger) !important; animation: shake 0.4s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-6px); } }
+
+        /* Rocket Launch Button Styles */
+        button.btn-primary { 
+            position: relative; overflow: visible; background: var(--primary); color: #ffffff; border: none; padding: 16px 28px; 
+            border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; transition: all 0.2s; 
+            display: flex; align-items: center; justify-content: center; gap: 10px; z-index: 2;
+        }
+        button.btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 8px 15px var(--primary-glow);}
+        button.btn-primary:active:not(:disabled) { transform: translateY(0); }
+        button.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        button.btn-primary.authenticating {
+            background: var(--bg-color); color: var(--primary); border: 2px solid var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow), inset 0 0 10px var(--primary-glow);
+            font-family: monospace; letter-spacing: 2px; pointer-events: none; transform: scale(0.98);
+        }
+
+        /* Rocket Animation Element */
+        .rocket-svg {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            left: -40px;
+            top: 50%;
+            transform: translateY(-50%) rotate(45deg);
+            opacity: 0;
+            color: #fff;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .authenticating .rocket-svg {
+            animation: blastOff 1.2s cubic-bezier(0.5, 0, 0.2, 1) forwards;
+        }
+
+        @keyframes blastOff {
+            0% { left: -40px; opacity: 1; transform: translateY(-50%) rotate(45deg); }
+            20% { left: 10%; transform: translateY(-50%) rotate(45deg); }
+            80% { left: 90%; transform: translateY(-60%) rotate(45deg) scale(1.2); opacity: 1;}
+            100% { left: 150%; transform: translateY(-100%) rotate(45deg) scale(1.5); opacity: 0;}
+        }
+
+        /* Quiz Specifics */
+        .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
+        .badge { background: var(--option-hover); padding: 6px 14px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; }
+        .timer { font-variant-numeric: tabular-nums; }
+        .timer.warning { color: var(--danger); font-weight: bold; animation: timerPulse 1s infinite; }
+        @keyframes timerPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .options-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 2rem; }
+        @media (min-width: 500px) { .options-grid { grid-template-columns: repeat(2, 1fr); } }
+        .option-btn { background: transparent; border: 1px solid var(--border-color); padding: 16px; border-radius: 12px; font-size: 1rem; color: var(--text-main); cursor: pointer; text-align: left; transition: all 0.2s; min-height: 60px; }
+        .option-btn:hover:not(:disabled) { background: var(--option-hover); transform: translateY(-2px);}
+        .option-btn:disabled { cursor: not-allowed; opacity: 0.8; }
+        .option-btn.correct { background: var(--success); border-color: var(--success); color: #ffffff; }
+        .option-btn.wrong { background: var(--danger); border-color: var(--danger); color: #ffffff; }
+
+        /* Mobile Bottom Dock */
+        @media (min-width: 769px) { .nav-icon { display: inline-block; } .nav-text { display: inline-block; } }
+        @media (max-width: 768px) {
+            main { padding-top: 1rem; } .card { padding: 1.5rem; } h1 { font-size: 1.8rem; } .front-header h1 { font-size: 2rem; }
+            nav {
+                position: fixed; top: auto; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 450px;
+                border-radius: 24px; padding: 10px 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); justify-content: space-between; border: 1px solid var(--border-color);
+            }
+            .nav-brand { display: none; } .nav-links { width: 100%; justify-content: space-between; gap: 0; }
+            .nav-btn { flex-direction: column; padding: 6px; border-radius: 16px; width: 55px; height: 55px; justify-content: center; gap: 6px; border: none; }
+            .nav-btn:hover, .nav-btn.active { background: var(--option-hover); transform: scale(1.05); }
+            .nav-icon { display: block; margin: 0; } .nav-text { display: block; font-size: 0.6rem; font-weight: 600; opacity: 0.8; }
+            .nav-btn.active .nav-text { opacity: 1; color: var(--primary); } .nav-btn.active .nav-icon { stroke: var(--primary); }
+        }
+        #theme-toggle { margin-right: auto; }
+        @media (max-width: 768px) { #theme-toggle { margin-right: 0; } }
+    </style>
+</head>
+<body>
+
+    <!-- 🌟 GLOBAL STAR BACKGROUND 🌟 -->
+    <div id="star-container"></div>
+
+    <!-- 🌟 COLLISION BOUNCE SPLASH SCREEN 🌟 -->
+    <div id="splash-screen">
+        <div class="splash-logo">
+            <span class="word-left">Study</span>
+            <span class="word-right">Buddy</span>
+        </div>
+        <div id="splash-text">System Boot Sequence Initiated</div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="glass hidden" id="main-nav" aria-label="Main Navigation">
+        <div class="nav-brand">StudyBuddy</div>
+        <div class="nav-links">
+            <button class="nav-btn" id="theme-toggle" aria-label="Toggle Theme">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                <span class="nav-text">Theme</span>
+            </button>
+            <button class="nav-btn" data-cat="oops" aria-label="OOPs Quiz">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                <span class="nav-text">OOPs</span>
+            </button>
+            <button class="nav-btn" data-cat="javascript" aria-label="JavaScript Quiz">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                <span class="nav-text">JS</span>
+            </button>
+            <button class="nav-btn" data-cat="dsa" aria-label="DSA Quiz">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+                <span class="nav-text">DSA</span>
+            </button>
+            <button class="nav-btn" data-cat="mix" aria-label="Mix Quiz">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                <span class="nav-text">Mix</span>
+            </button>
+            <button class="nav-btn" id="logout-btn" aria-label="Logout">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="stroke: var(--danger);"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                <span class="nav-text" style="color: var(--danger);">Exit</span>
+            </button>
+        </div>
+    </nav>
+
+    <main id="main-content">
+        <!-- 1. Login Screen -->
+        <section id="login-screen" class="card glass hidden" aria-labelledby="login-title">
+            <h1 id="login-title">StudyBuddy</h1>
+            <p>Interactive Engineering Assessment</p>
+            <label for="username" class="hidden">Enter your name</label>
+            <input type="text" id="username" placeholder="Enter your name..." autocomplete="off" aria-required="true">
+            <button class="btn-primary" id="login-start-btn">
+                <span id="btn-text">Start Session</span>
+                <!-- Rocket SVG for animation -->
+                <svg class="rocket-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
+                    <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
+                    <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path>
+                    <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path>
+                </svg>
+            </button>
+        </section>
+
+        <!-- 2. Front Page (Hub) -->
+        <section id="dashboard-screen" class="card card-wide glass hidden" aria-labelledby="welcome-text">
+            <div class="front-header">
+                <h1 id="welcome-text">Welcome Back</h1>
+                <p>Your B.Tech CS Prep Hub</p>
+            </div>
+            
+            <div class="stats-container">
+                <div class="stat-box">
+                    <h3>Total Score</h3>
+                    <p id="total-score" aria-live="polite">0</p>
+                </div>
+                <div class="stat-box">
+                    <h3>Questions Answered</h3>
+                    <p id="total-answered" aria-live="polite">0</p>
+                </div>
+                <div class="stat-box" style="border-color: var(--primary);">
+                    <h3 style="color: var(--primary);">Global Accuracy</h3>
+                    <p id="global-accuracy" aria-live="polite">0%</p>
+                </div>
+            </div>
+
+            <h2>Select a Study Module</h2>
+            <div class="modules-grid">
+                <div class="module-card dashboard-cat-btn" data-dash-cat="oops" tabindex="0">
+                    <div class="module-icon-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                    </div>
+                    <div>
+                        <h3>OOPs Core (10 Qs)</h3>
+                        <p>Master classes, inheritance, encapsulation, and object-oriented principles.</p>
+                    </div>
+                </div>
+
+                <div class="module-card dashboard-cat-btn" data-dash-cat="javascript" tabindex="0">
+                    <div class="module-icon-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    </div>
+                    <div>
+                        <h3>JavaScript (10 Qs)</h3>
+                        <p>Conquer closures, asynchronous code, ES6 syntax, and standard Web Dev logic.</p>
+                    </div>
+                </div>
+
+                <div class="module-card dashboard-cat-btn" data-dash-cat="dsa" tabindex="0">
+                    <div class="module-icon-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg>
+                    </div>
+                    <div>
+                        <h3>Data Structures (10 Qs)</h3>
+                        <p>Level up your algorithmic problem solving with Trees, Graphs, and Sorting.</p>
+                    </div>
+                </div>
+
+                <div class="module-card dashboard-cat-btn" data-dash-cat="mix" tabindex="0">
+                    <div class="module-icon-wrapper" style="background: rgba(139, 92, 246, 0.2);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                    </div>
+                    <div>
+                        <h3>Master Mix (10 Qs)</h3>
+                        <p>A balanced challenge across all technical domains to test your ultimate readiness.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Quiz Screen -->
+        <section id="quiz-screen" class="card glass hidden" aria-labelledby="question-text">
+            <div class="quiz-header">
+                <div class="badge" id="progress" aria-live="polite">Q 1 / 10</div>
+                <div class="badge" id="category-badge" style="color: var(--primary);">Category</div>
+                <div class="badge timer" id="timer" aria-live="assertive">00:15</div>
+            </div>
+            <h2 id="question-text" style="text-align: center;">Question text goes here?</h2>
+            <div class="options-grid" id="options-container" role="group" aria-label="Answer options"></div>
+            <button class="btn-primary hidden" id="next-btn">Next Question</button>
+        </section>
+
+        <!-- 4. Result Screen -->
+        <section id="result-screen" class="card glass hidden" aria-labelledby="result-title">
+            <h1 id="result-title">Assessment Complete</h1>
+            <h2 id="final-score" style="font-size: 2.5rem; margin: 1rem 0; color: var(--primary); text-align: center;" aria-live="polite">10/10</h2>
+            <p id="percentage-text">Accuracy: 100%</p>
+            <div style="margin-bottom: 2rem; padding: 1.5rem; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 16px;">
+                <p style="margin:0; font-size: 0.9rem; color: var(--text-muted);">Personal Best for <span id="result-cat-name"></span></p>
+                <p id="high-score-display" style="font-size: 1.5rem; font-weight: bold; margin-top: 0.5rem;">0</p>
+            </div>
+            <div style="display: flex; gap: 1rem; flex-direction: column;">
+                <button class="btn-primary" id="restart-btn">Restart Module</button>
+                <button class="btn-primary" id="return-dash-btn" style="background: transparent; color: var(--text-main); border: 1px solid var(--border-color);">Return to Hub</button>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // --- 0. BACKGROUND STARS GENERATOR ---
+        const starContainer = document.getElementById('star-container');
+        
+        for(let i = 0; i < 60; i++) {
+            let star = document.createElement('div');
+            star.className = 'star';
+            let size = Math.random() * 3 + 1;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            star.style.left = Math.random() * 100 + 'vw';
+            star.style.top = Math.random() * 100 + 'vh';
+            star.style.animationDuration = (Math.random() * 3 + 1.5) + 's';
+            star.style.animationDelay = (Math.random() * 2) + 's';
+            starContainer.appendChild(star);
+        }
+
+        function createShootingStar() {
+            const star = document.createElement('div');
+            star.classList.add('shooting-star');
+            star.style.top = Math.random() * 50 + 'vh'; 
+            star.style.left = (Math.random() * 50 + 50) + 'vw'; 
+            const duration = Math.random() * 1.5 + 1; 
+            star.style.animationDuration = duration + 's';
+            starContainer.appendChild(star);
+            setTimeout(() => star.remove(), duration * 1000);
+        }
+        
+        // Fire one early during the splash screen, then every 3s
+        setTimeout(createShootingStar, 600);
+        setInterval(createShootingStar, 3000); 
+
+        // --- SPLASH SCREEN LOGIC ---
+        const techPhrases = [
+            "System Boot Sequence Initiated",
+            "Loading User Environment...",
+            "Compiling Quiz Modules...",
+            "Syncing Global Scores...",
+            "StudyBuddy Online."
+        ];
+        
+        let phraseIndex = 0;
+        const splashText = document.getElementById('splash-text');
+        
+        const phraseInterval = setInterval(() => {
+            phraseIndex++;
+            if (phraseIndex < techPhrases.length) {
+                splashText.innerText = techPhrases[phraseIndex];
+            }
+        }, 550);
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                clearInterval(phraseInterval);
+                const splash = document.getElementById('splash-screen');
+                splash.classList.add('fade-out');
+                
+                setTimeout(() => {
+                    splash.style.display = 'none'; 
+                    document.getElementById('main-content').classList.add('ready');
+                    initApp();
+                }, 800); 
+            }, 3000); 
+        });
+
+        // --- THEME MANAGEMENT ---
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            const themes = ['dark', 'light', 'midnight'];
+            let currentTheme = document.documentElement.getAttribute('data-theme');
+            let currentThemeIndex = themes.indexOf(currentTheme);
+            
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            const newTheme = themes[currentThemeIndex];
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('studybuddy_theme', newTheme);
+        });
+
+        // --- 1. FULL QUIZ DATA (10 Qs Per Section) ---
+        const quizData = {
+            oops: [
+                { q: "Which concept restricts direct access to some of an object's components?", opts: ["Inheritance", "Polymorphism", "Encapsulation", "Abstraction"], ans: 2 },
+                { q: "What allows a child class to provide a specific implementation of a method already provided by its parent?", opts: ["Overloading", "Overriding", "Encapsulation", "Interface"], ans: 1 },
+                { q: "Which of the following is NOT a pillar of OOP?", opts: ["Polymorphism", "Compilation", "Inheritance", "Abstraction"], ans: 1 },
+                { q: "What is a class in OOP?", opts: ["A blueprint for creating objects", "A memory address", "A primitive data type", "A runtime error"], ans: 0 },
+                { q: "Which keyword is typically used to refer to the current instance of a class?", opts: ["super", "current", "this", "self"], ans: 2 },
+                { q: "What is an abstract class?", opts: ["A class with no methods", "A class that cannot be instantiated", "A class that cannot be inherited", "A class with only private members"], ans: 1 },
+                { q: "Multiple inheritance is not supported directly in Java. What is used to achieve it?", opts: ["Abstract Classes", "Interfaces", "Packages", "Static methods"], ans: 1 },
+                { q: "What is method overloading?", opts: ["Same method name, different parameters", "Same method name, same parameters in child class", "Changing the return type only", "Hiding parent methods"], ans: 0 },
+                { q: "What is the primary purpose of a constructor?", opts: ["To destroy an object", "To initialize an object", "To print values", "To return a memory address"], ans: 1 },
+                { q: "Which access modifier allows access only within the same class?", opts: ["Public", "Protected", "Default", "Private"], ans: 3 }
+            ],
+            javascript: [
+                { q: "Which keyword declares a variable with block scope?", opts: ["var", "let", "function", "global"], ans: 1 },
+                { q: "What is the output of `typeof null` in JavaScript?", opts: ["object", "null", "undefined", "number"], ans: 0 },
+                { q: "What does the `===` operator check?", opts: ["Only value", "Only type", "Both value and type", "Memory location"], ans: 2 },
+                { q: "Which method converts a JS object to a JSON string?", opts: ["JSON.parse()", "JSON.toString()", "JSON.stringify()", "String()"], ans: 2 },
+                { q: "What is a closure in JavaScript?", opts: ["A function bundled with its lexical environment", "A closed browser window", "A private class", "A loop that never ends"], ans: 0 },
+                { q: "Which function is used to execute code after a specific delay?", opts: ["setInterval()", "setTimeout()", "delay()", "wait()"], ans: 1 },
+                { q: "How do you add an element to the end of an array?", opts: ["unshift()", "pop()", "push()", "concat()"], ans: 2 },
+                { q: "What is the primary object representing the HTML page in JS?", opts: ["Window", "Document", "Screen", "Navigator"], ans: 1 },
+                { q: "Which of the following is NOT a JS data type?", opts: ["String", "Boolean", "Float", "Undefined"], ans: 2 },
+                { q: "What does `NaN` stand for?", opts: ["Not a Number", "Null and Negative", "New Array Notation", "No Action Needed"], ans: 0 }
+            ],
+            dsa: [
+                { q: "Which data structure follows the LIFO principle?", opts: ["Queue", "Tree", "Graph", "Stack"], ans: 3 },
+                { q: "What is the time complexity of searching in a Hash Table (average case)?", opts: ["O(n)", "O(log n)", "O(1)", "O(n^2)"], ans: 2 },
+                { q: "Which sorting algorithm uses a pivot element?", opts: ["Merge Sort", "Bubble Sort", "Quick Sort", "Insertion Sort"], ans: 2 },
+                { q: "A tree with 'N' nodes will have how many edges?", opts: ["N", "N - 1", "N + 1", "log N"], ans: 1 },
+                { q: "Which traversal method visits the left subtree, then the root, then the right subtree?", opts: ["Pre-order", "In-order", "Post-order", "Level-order"], ans: 1 },
+                { q: "What is the worst-case time complexity of Binary Search?", opts: ["O(1)", "O(n)", "O(log n)", "O(n log n)"], ans: 2 },
+                { q: "Which data structure is best for implementing a priority queue?", opts: ["Array", "Linked List", "Heap", "Stack"], ans: 2 },
+                { q: "In a Graph, what algorithm is used to find the shortest path from a single source?", opts: ["DFS", "Kruskal's", "Dijkstra's", "Prim's"], ans: 2 },
+                { q: "Dynamic Programming is primarily used for?", opts: ["Optimization problems", "Sorting", "Syntax parsing", "Database indexing"], ans: 0 },
+                { q: "Which of these is a non-linear data structure?", opts: ["Array", "Linked List", "Stack", "Tree"], ans: 3 }
+            ],
+            mix: [
+                { q: "What does HTML stand for?", opts: ["Hyper Text Markup Language", "High Tech Modern Language", "Hyperlink and Text Markup", "Home Tool Markup Language"], ans: 0 },
+                { q: "In OOP, what represents a real-world entity?", opts: ["Class", "Object", "Method", "Variable"], ans: 1 },
+                { q: "What is the time complexity of accessing an element in an array by index?", opts: ["O(n)", "O(log n)", "O(1)", "O(n^2)"], ans: 2 },
+                { q: "Which CSS property is used to create a glassmorphism blur effect?", opts: ["filter", "opacity", "backdrop-filter", "background-blend-mode"], ans: 2 },
+                { q: "Which JS framework is maintained by Facebook (Meta)?", opts: ["Angular", "Vue", "React", "Svelte"], ans: 2 },
+                { q: "A Queue follows which principle?", opts: ["LIFO", "FIFO", "FILO", "Random"], ans: 1 },
+                { q: "What does SQL stand for?", opts: ["Structured Query Language", "Strong Question Language", "Sequential Query Logic", "System Query Language"], ans: 0 },
+                { q: "In JS, `[] == false` evaluates to?", opts: ["true", "false", "undefined", "TypeError"], ans: 0 },
+                { q: "Which protocol is used to secure HTTP connections?", opts: ["FTP", "SSH", "TLS/SSL", "SMTP"], ans: 2 },
+                { q: "Which data structure is used to handle recursion?", opts: ["Queue", "Stack", "Tree", "Linked List"], ans: 1 }
+            ]
+        };
+
+        const categoryNames = { oops: "OOPs Core", javascript: "JavaScript", dsa: "Data Structures", mix: "Master Mix" };
+
+        // --- 2. STATE & DOM ---
+        let currentCategory = "";
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let currentUser = "";
+        let timeLeft = 15;
+        let timerInterval;
+        let isAnswering = false; 
+
+        const nav = document.getElementById('main-nav');
+        const navBtns = document.querySelectorAll('.nav-btn[data-cat]');
+        const dashboardBtns = document.querySelectorAll('.dashboard-cat-btn');
+        const loginScreen = document.getElementById('login-screen');
+        const dashboardScreen = document.getElementById('dashboard-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const usernameInput = document.getElementById('username');
+        const optionsContainer = document.getElementById('options-container');
+        const nextBtn = document.getElementById('next-btn');
+
+        // --- 3. LOGIC ---
+        function initApp() {
+            const savedUser = localStorage.getItem('csQuizUser');
+            if (savedUser) {
+                currentUser = savedUser;
+                showDashboard();
+            } else {
+                showScreen(loginScreen);
+                nav.classList.add('hidden');
+                usernameInput.focus();
+            }
+        }
+
+        function handleLogin() {
+            const name = usernameInput.value.trim();
+            if (name.length < 1) {
+                usernameInput.classList.add('input-error');
+                setTimeout(() => usernameInput.classList.remove('input-error'), 400);
+                return;
+            }
+            
+            // Trigger Robotic Rocket Button Animation
+            const loginBtn = document.getElementById('login-start-btn');
+            const btnText = document.getElementById('btn-text');
+            
+            loginBtn.classList.add('authenticating');
+            btnText.innerText = "/> IGNITING...";
+
+            setTimeout(() => {
+                currentUser = name;
+                localStorage.setItem('csQuizUser', name);
+                showDashboard();
+                
+                // Reset button quietly after leaving screen
+                setTimeout(() => {
+                    loginBtn.classList.remove('authenticating');
+                    btnText.innerText = "Start Session";
+                }, 500);
+            }, 1200); // Matches rocket blast off duration
+        }
+
+        document.getElementById('login-start-btn').addEventListener('click', handleLogin);
+        usernameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('csQuizUser');
+            currentUser = "";
+            usernameInput.value = "";
+            nav.classList.add('hidden');
+            showScreen(loginScreen);
+        });
+
+        function updateGlobalStats() {
+            let totalAnswered = parseInt(localStorage.getItem(`total_qs_${currentUser}`) || 0);
+            let totalScore = parseInt(localStorage.getItem(`total_score_${currentUser}`) || 0);
+            
+            let accuracy = 0;
+            if (totalAnswered > 0) accuracy = Math.round((totalScore / totalAnswered) * 100);
+
+            document.getElementById('total-answered').innerText = totalAnswered;
+            document.getElementById('total-score').innerText = totalScore;
+            document.getElementById('global-accuracy').innerText = `${accuracy}%`;
+        }
+
+        function showDashboard() {
+            nav.classList.remove('hidden');
+            const hour = new Date().getHours();
+            let greeting = "Good Evening";
+            if(hour < 12) greeting = "Good Morning";
+            else if(hour < 18) greeting = "Good Afternoon";
+
+            document.getElementById('welcome-text').innerText = `${greeting}, ${currentUser}`;
+            updateGlobalStats();
+            showScreen(dashboardScreen);
+            updateActiveNav(""); 
+        }
+
+        dashboardBtns.forEach(card => {
+            card.addEventListener('click', (e) => startQuiz(e.currentTarget.getAttribute('data-dash-cat')));
+            card.addEventListener('keypress', (e) => { if(e.key === 'Enter') startQuiz(e.currentTarget.getAttribute('data-dash-cat')); });
+        });
+
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => startQuiz(e.currentTarget.getAttribute('data-cat')));
+        });
+
+        function startQuiz(category) {
+            currentCategory = category;
+            currentQuestionIndex = 0;
+            score = 0;
+            updateActiveNav(category);
+            document.getElementById('category-badge').innerText = categoryNames[category];
+            nextBtn.classList.add('hidden');
+            showScreen(quizScreen);
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            isAnswering = false;
+            clearInterval(timerInterval);
+            timeLeft = 15;
+            updateTimerDisplay();
+            startTimer();
+
+            const questionsArr = quizData[currentCategory];
+            const currentQ = questionsArr[currentQuestionIndex];
+            
+            document.getElementById('question-text').innerText = currentQ.q;
+            document.getElementById('progress').innerText = `Q ${currentQuestionIndex + 1} / ${questionsArr.length}`;
+            
+            optionsContainer.innerHTML = '';
+            nextBtn.classList.add('hidden');
+
+            currentQ.opts.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.classList.add('option-btn');
+                button.innerText = option;
+                button.setAttribute('aria-label', option);
+                button.addEventListener('click', () => selectOption(index, button));
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function selectOption(selectedIndex, selectedButton) {
+            if (isAnswering) return;
+            isAnswering = true;
+            clearInterval(timerInterval);
+            
+            const currentQ = quizData[currentCategory][currentQuestionIndex];
+            const allButtons = optionsContainer.children;
+
+            let totalAnswered = parseInt(localStorage.getItem(`total_qs_${currentUser}`) || 0);
+            localStorage.setItem(`total_qs_${currentUser}`, totalAnswered + 1);
+
+            for (let btn of allButtons) btn.disabled = true;
+
+            if (selectedIndex === currentQ.ans) {
+                selectedButton.classList.add('correct');
+                score++;
+                let totalScore = parseInt(localStorage.getItem(`total_score_${currentUser}`) || 0);
+                localStorage.setItem(`total_score_${currentUser}`, totalScore + 1);
+            } else {
+                selectedButton.classList.add('wrong');
+                allButtons[currentQ.ans].classList.add('correct');
+            }
+            nextBtn.classList.remove('hidden');
+            nextBtn.focus();
+        }
+
+        function startTimer() {
+            const timerText = document.getElementById('timer');
+            timerText.classList.remove('warning');
+            timerInterval = setInterval(() => {
+                if (isAnswering) { clearInterval(timerInterval); return; }
+                timeLeft--;
+                updateTimerDisplay();
+                if (timeLeft <= 5) timerText.classList.add('warning');
+                if (timeLeft <= 0) { clearInterval(timerInterval); handleTimeOut(); }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() { document.getElementById('timer').innerText = `00:${timeLeft < 10 ? '0' + timeLeft : timeLeft}`; }
+
+        function handleTimeOut() {
+            if (isAnswering) return;
+            isAnswering = true;
+            
+            let totalAnswered = parseInt(localStorage.getItem(`total_qs_${currentUser}`) || 0);
+            localStorage.setItem(`total_qs_${currentUser}`, totalAnswered + 1);
+            
+            const currentQ = quizData[currentCategory][currentQuestionIndex];
+            const allButtons = optionsContainer.children;
+            
+            for (let btn of allButtons) btn.disabled = true;
+            
+            allButtons[currentQ.ans].classList.add('correct');
+            nextBtn.classList.remove('hidden');
+            nextBtn.focus();
+        }
+
+        nextBtn.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData[currentCategory].length) loadQuestion();
+            else endQuiz();
+        });
+
+        function endQuiz() {
+            showScreen(resultScreen);
+            const totalQs = quizData[currentCategory].length;
+            const percentage = Math.round((score / totalQs) * 100);
+            
+            document.getElementById('final-score').innerText = `${score} / ${totalQs}`;
+            document.getElementById('percentage-text').innerText = `Accuracy: ${percentage}%`;
+            document.getElementById('result-cat-name').innerText = categoryNames[currentCategory];
+
+            const highScoreKey = `score_${currentUser}_${currentCategory}`;
+            let storedHighScore = localStorage.getItem(highScoreKey) || 0;
+
+            if (score > storedHighScore) {
+                localStorage.setItem(highScoreKey, score);
+                storedHighScore = score;
+            }
+
+            document.getElementById('high-score-display').innerText = `${storedHighScore} / ${totalQs}`;
+            updateActiveNav(""); 
+            document.getElementById('restart-btn').focus();
+        }
+
+        document.getElementById('restart-btn').addEventListener('click', () => startQuiz(currentCategory));
+        document.getElementById('return-dash-btn').addEventListener('click', showDashboard);
+
+        function showScreen(screenElement) {
+            loginScreen.classList.add('hidden');
+            dashboardScreen.classList.add('hidden');
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            screenElement.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateActiveNav(category) {
+            navBtns.forEach(btn => {
+                if(btn.getAttribute('data-cat') === category) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+        }
+    </script>
+</body>
+</html>
